@@ -1,0 +1,56 @@
+/node_modules
+config/*
+/server.txt
+.DS_Store
+public/*/*
+/dist
+/node_modules
+/src/config/*
+token
+/logs
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.env
+.db.config.json
+# OS
+.DS_Store
+arhive
+
+# Tests
+/coverage
+/.nyc_output
+jwt.ts
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+.VSCodeCounter
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+!*/**/.gitkeep
+plans.todo
+!logs/*
+!src/config/good-image-config.ts
+
+
+!.gitkeep
+!*/.gitkeep
+!public/*/*/.gitkeep
+
