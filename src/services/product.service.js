@@ -135,7 +135,7 @@ class ProductService {
             where: { isActive: true, isDigital: false },
             include: [{ model: Inventory, as: 'inventory', required: false }],
         });
-        return products.filter(product => product.isLowStock());
+        return products.filter((product) => product.isLowStock());
     }
 }
 

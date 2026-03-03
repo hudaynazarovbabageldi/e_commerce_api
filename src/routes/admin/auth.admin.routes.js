@@ -73,8 +73,6 @@ const verifyEmailSchema = {
     }),
 };
 
-console.log('authAdminController: ', authAdminController);
-
 router.post(
     '/register',
     // authLimiter,

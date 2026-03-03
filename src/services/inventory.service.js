@@ -90,10 +90,10 @@ class InventoryService {
         for (const email of adminEmails) {
             await emailService
                 .sendLowStockAlertEmail(email, [product])
-                .catch(err =>
+                .catch((err) =>
                     logger.logError('Failed to send low stock alert', {
                         error: err.message,
-                    })
+                    }),
                 );
         }
     }

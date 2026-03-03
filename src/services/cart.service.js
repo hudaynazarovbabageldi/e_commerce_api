@@ -25,7 +25,7 @@ class CartService {
             if (!product.isDigital && product.stock < newQuantity) {
                 throw new ApiError(
                     400,
-                    `Only ${product.stock} items available`
+                    `Only ${product.stock} items available`,
                 );
             }
             await cartItem.updateQuantity(newQuantity);

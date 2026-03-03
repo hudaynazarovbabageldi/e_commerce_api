@@ -1,6 +1,6 @@
 const morgan = require('morgan');
 const logger = require('../utils/logger');
-const { maskSensitiveData, maskEmail } = require('../utils/Encryption');
+const { maskSensitiveData, maskEmail } = require('../utils/encryption');
 
 /**
  * Custom Morgan token for user ID
