@@ -1,5 +1,6 @@
-const { Banners } = require('../..models');
+const { Banner } = require('../../models');
 const { ApiResponse } = require('../../utils/ApiResponse');
+const { ApiError } = require('../../utils/ApiError');
 const { asyncHandler } = require('../../utils/asyncHandler');
 const pagination = require('../../utils/pagination');
 const { getById } = require('../../utils/EntityResolver');
@@ -9,35 +10,25 @@ const getBanners = asyncHandler(async (req, res) => {
         req.query,
     );
 
-    const filters = pagination.parseFilterParams(req.query, [
-        'role',
-        'isActive',
-    ]);
+    const filters = pagination.parseFilterParams(req.query, ['isActive']);
 
     const where = {};
     if (filters.role) where.role = filters.role;
     if (filters.isActive !== undefined) where.isActive = filters.isActive;
     if (req.query.search) {
         const { Op } = require('sequelize');
-        where[Op.or] = [
-            { email: { [Op.iLike]: `%${req.query.search}%` } },
-            { firstName: { [Op.iLike]: `%${req.query.search}%` } },
-            { lastName: { [Op.iLike]: `%${req.query.search}%` } },
-        ];
+        where[Op.or] = [{ search: { [Op.iLike]: `%${req.query.search}%` } }];
     }
 
-    const { rows: users, count } = await User.findAndCountAll({
+    const { rows: banners, count } = await Banner.findAndCountAll({
         where,
-        attributes: {
-            exclude: ['password', 'resetPasswordToken', 'verificationToken'],
-        },
         limit,
         offset,
         order: [['createdAt', 'DESC']],
     });
 
     const response = pagination.createPaginatedResponse(
-        users,
+        banners,
         count,
         page,
         limit,
@@ -46,7 +37,7 @@ const getBanners = asyncHandler(async (req, res) => {
     res.json({
         success: true,
         statusCode: 200,
-        message: 'Users retrieved successfully',
+        message: 'Banners retrieved successfully',
         data: response.data,
         totalPage: response.pagination.totalPages,
         currentPage: response.pagination.currentPage,
@@ -56,18 +47,83 @@ const getBanners = asyncHandler(async (req, res) => {
 });
 
 const getBannerById = asyncHandler(async (req, res) => {
-    const user = await getById(User, req.params.id, {
-        attributes: {
-            exclude: ['password', 'resetPasswordToken', 'verificationToken'],
-        },
+    const user = await getById(Banner, req.params.id);
+
+    res.json(new ApiResponse(200, user, 'Banner retrieved successfully'));
+});
+
+const createBanner = asyncHandler(async (req, res) => {
+    const {
+        title,
+        description,
+        imageUrl,
+        link,
+        position,
+        isActive,
+        startDate,
+        endDate,
+    } = req.body;
+
+    if (!title || !imageUrl) {
+        throw new ApiError(400, 'Title and imageUrl are required');
+    }
+
+    const banner = await Banner.create({
+        title,
+        description,
+        imageUrl,
+        link,
+        position,
+        isActive,
+        startDate,
+        endDate,
     });
 
-    console.log('user: ', user);
+    res.status(201).json(
+        new ApiResponse(201, banner, 'Banner created successfully'),
+    );
+});
 
-    res.json(new ApiResponse(200, user, 'User retrieved successfully'));
+const updateBanner = asyncHandler(async (req, res) => {
+    const banner = await getById(Banner, req.params.id);
+
+    const {
+        title,
+        description,
+        imageUrl,
+        link,
+        position,
+        isActive,
+        startDate,
+        endDate,
+    } = req.body;
+
+    await banner.update({
+        title: title ?? banner.title,
+        description: description ?? banner.description,
+        imageUrl: imageUrl ?? banner.imageUrl,
+        link: link ?? banner.link,
+        position: position ?? banner.position,
+        isActive: isActive ?? banner.isActive,
+        startDate: startDate ?? banner.startDate,
+        endDate: endDate ?? banner.endDate,
+    });
+
+    res.json(new ApiResponse(200, banner, 'Banner updated successfully'));
+});
+
+const deleteBanner = asyncHandler(async (req, res) => {
+    const banner = await getById(Banner, req.params.id);
+
+    await banner.destroy();
+
+    res.json(new ApiResponse(200, null, 'Banner deleted successfully'));
 });
 
 module.exports = {
     getBanners,
     getBannerById,
+    createBanner,
+    updateBanner,
+    deleteBanner,
 };
