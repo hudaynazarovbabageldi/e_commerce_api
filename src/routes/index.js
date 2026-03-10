@@ -25,6 +25,7 @@ router.get('/v1', (req, res) => {
                 auth: '/api/v1/admin/auth',
                 users: '/api/v1/admin/users',
                 banners: '/api/v1/admin/banners',
+                categories: '/api/v1/admin/categories',
             },
         },
     });

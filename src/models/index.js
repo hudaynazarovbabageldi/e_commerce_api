@@ -23,8 +23,22 @@ const sequelize = new Sequelize(
 // Import models
 const User = require('./User')(sequelize);
 const Banner = require('./Banner')(sequelize);
+const Category = require('./Category')(sequelize);
+const Product = require('./Product')(sequelize);
 
 // Define associations
+
+// Category self-referencing associations
+Category.belongsTo(Category, {
+    foreignKey: 'parentId',
+    as: 'parent',
+    allowNull: true,
+});
+
+Category.hasMany(Category, {
+    foreignKey: 'parentId',
+    as: 'children',
+});
 
 // User associations
 
@@ -34,4 +48,6 @@ module.exports = {
     Sequelize,
     User,
     Banner,
+    Category,
+    Product,
 };
