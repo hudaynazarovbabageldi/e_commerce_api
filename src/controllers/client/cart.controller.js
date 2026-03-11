@@ -200,7 +200,9 @@ const removeFromCart = asyncHandler(async (req, res) => {
  * @route DELETE /api/cart
  */
 const clearCart = asyncHandler(async (req, res) => {
-    const cart = await Cart.findByUser(req.user.id);
+    const { userId } = req.body;
+    console.log('userId: ', userId);
+    const cart = await Cart.findByUser(userId);
 
     if (!cart) {
         throw new ApiError(404, 'Cart not found');
