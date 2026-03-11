@@ -29,6 +29,7 @@ router.get('/v1', (req, res) => {
                 categories: '/api/v1/admin/categories',
                 products: '/api/v1/admin/products',
                 orders: '/api/v1/admin/orders',
+                brands: 'api/v1/admin/brands',
             },
         },
     });

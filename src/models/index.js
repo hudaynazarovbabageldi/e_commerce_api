@@ -23,6 +23,7 @@ const sequelize = new Sequelize(
 // Import models
 const User = require('./User')(sequelize);
 const Banner = require('./Banner')(sequelize);
+const Brand = require('./Brand')(sequelize);
 const Category = require('./Category')(sequelize);
 const Product = require('./Product')(sequelize);
 const Order = require('./Order')(sequelize);
@@ -129,6 +130,7 @@ module.exports = {
     Sequelize,
     User,
     Banner,
+    Brand,
     Category,
     Product,
     Order,

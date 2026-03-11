@@ -10,7 +10,7 @@ const {
 const {
     validate,
     commonSchemas,
-} = require('../../middlewares/validate.middleware');
+} = require('../../middlewares/Validate.middleware');
 const { apiLimiter } = require('../../middlewares/rateLimiter.middleware');
 
 const createUserSchema = {
