@@ -7,7 +7,7 @@ const { authenticate } = require('../../middlewares/auth.middleware');
 const {
     validate,
     commonSchemas,
-} = require('../../middlewares/validate.middleware');
+} = require('../../middlewares/Validate.middleware');
 const {
     authLimiter,
     passwordResetLimiter,

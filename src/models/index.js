@@ -25,6 +25,8 @@ const User = require('./User')(sequelize);
 const Banner = require('./Banner')(sequelize);
 const Category = require('./Category')(sequelize);
 const Product = require('./Product')(sequelize);
+const Order = require('./Order')(sequelize);
+const OrderItem = require('./OrderItem')(sequelize);
 
 // Define associations
 
@@ -53,6 +55,38 @@ Category.hasMany(Product, {
 
 // User associations
 
+// Order associations
+Order.belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user',
+});
+
+User.hasMany(Order, {
+    foreignKey: 'userId',
+    as: 'orders',
+});
+
+// OrderItem associations
+OrderItem.belongsTo(Order, {
+    foreignKey: 'orderId',
+    as: 'order',
+});
+
+Order.hasMany(OrderItem, {
+    foreignKey: 'orderId',
+    as: 'items',
+});
+
+OrderItem.belongsTo(Product, {
+    foreignKey: 'productId',
+    as: 'product',
+});
+
+Product.hasMany(OrderItem, {
+    foreignKey: 'productId',
+    as: 'orderItems',
+});
+
 // Export models and sequelize instance
 module.exports = {
     sequelize,
@@ -61,4 +95,6 @@ module.exports = {
     Banner,
     Category,
     Product,
+    Order,
+    OrderItem,
 };
