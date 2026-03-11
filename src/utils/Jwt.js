@@ -10,7 +10,7 @@ const { ApiError } = require('./ApiError');
  */
 const generateAccessToken = (
     payload,
-    expiresIn = config.jwt.accessExpiresIn || '15m',
+    expiresIn = config.jwt.accessExpiresIn || '1d',
 ) => {
     try {
         return jwt.sign(payload, config.jwt.secret, {

@@ -40,6 +40,17 @@ Category.hasMany(Category, {
     as: 'children',
 });
 
+// Product associations
+Product.belongsTo(Category, {
+    foreignKey: 'categoryId',
+    as: 'category',
+});
+
+Category.hasMany(Product, {
+    foreignKey: 'categoryId',
+    as: 'products',
+});
+
 // User associations
 
 // Export models and sequelize instance
