@@ -32,12 +32,3 @@ router.get(
 );
 
 module.exports = router;
-
-//    getCategories,
-//     getCategoryTree,
-//     getCategoryById,
-//     getCategoryBySlug,
-//     createCategory,
-//     updateCategory,
-//     deleteCategory,
-//     getCategoryProducts,
