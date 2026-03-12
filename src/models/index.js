@@ -56,6 +56,17 @@ Category.hasMany(Product, {
     as: 'products',
 });
 
+// Brand associations
+Product.belongsTo(Brand, {
+    foreignKey: 'brandId',
+    as: 'brand',
+});
+
+Brand.hasMany(Product, {
+    foreignKey: 'brandId',
+    as: 'products',
+});
+
 // User associations
 
 // Order associations

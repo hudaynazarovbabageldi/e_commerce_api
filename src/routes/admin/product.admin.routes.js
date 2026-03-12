@@ -52,6 +52,7 @@ const createProductSchema = {
         metaTitle: Joi.string().max(200),
         metaDescription: Joi.string(),
         metaKeywords: commonSchemas.stringArray,
+        brandId: commonSchemas.uuid,
     }),
 };
 

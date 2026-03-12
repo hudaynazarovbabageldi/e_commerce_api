@@ -177,8 +177,10 @@ module.exports = (sequelize) => {
                 field: 'vendor_id',
             },
 
-            brand: {
-                type: DataTypes.STRING(100),
+            brandId: {
+                type: DataTypes.UUID,
+                allowNull: true,
+                field: 'brand_id',
             },
 
             tags: {

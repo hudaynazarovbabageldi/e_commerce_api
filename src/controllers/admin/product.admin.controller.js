@@ -1,7 +1,7 @@
 const productService = require('../../services/product.service');
 const { ApiResponse } = require('../../utils/ApiResponse');
 const { asyncHandler } = require('../../utils/asyncHandler');
-const { Product } = require('../../models');
+
 class ProductController {
     getProducts = asyncHandler(async (req, res) => {
         const filters = {
