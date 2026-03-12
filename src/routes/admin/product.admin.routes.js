@@ -21,9 +21,6 @@ const {
     attachFileUrls,
 } = require('../../middlewares/upload.middleware');
 
-/**
- * Validation Schemas
- */
 const createProductSchema = {
     body: Joi.object({
         name: Joi.string().min(3).max(200).required(),
@@ -211,7 +208,7 @@ router.post(
     '/',
     authenticate,
     authorize('admin', 'vendor'),
-    validate(createProductSchema),
+    // validate(createProductSchema),
     productController.createProduct,
 );
 

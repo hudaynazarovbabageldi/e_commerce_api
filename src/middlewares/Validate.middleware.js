@@ -86,7 +86,7 @@ const validate = (schema) => {
         }
 
         if (errors.length > 0) {
-            throw new ApiError(400, 'Validation failed', true, null, errors);
+            throw new ApiError(400, 'Validation error', true, null, errors);
         }
 
         next();
