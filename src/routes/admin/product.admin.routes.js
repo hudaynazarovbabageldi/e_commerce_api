@@ -50,6 +50,7 @@ const createProductSchema = {
         metaDescription: Joi.string(),
         metaKeywords: commonSchemas.stringArray,
         brandId: commonSchemas.uuid,
+        vendorId: commonSchemas.uuid.required(),
     }),
 };
 
@@ -208,7 +209,7 @@ router.post(
     '/',
     authenticate,
     authorize('admin', 'vendor'),
-    // validate(createProductSchema),
+    validate(createProductSchema),
     productController.createProduct,
 );
 
