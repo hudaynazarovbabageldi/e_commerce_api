@@ -17,10 +17,10 @@ class UserService {
         if (!user) throw new ApiError(404, 'User not found');
 
         ['firstName', 'lastName', 'phone', 'dateOfBirth', 'avatar'].forEach(
-            field => {
+            (field) => {
                 if (updateData[field] !== undefined)
                     user[field] = updateData[field];
-            }
+            },
         );
 
         await user.save();

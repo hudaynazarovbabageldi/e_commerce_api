@@ -21,6 +21,11 @@ router.get('/v1', (req, res) => {
                 auth: '/api/v1/auth',
                 users: '/api/v1/users',
                 banners: '/api/v1/banners',
+                upload: '/api/v1/upload',
+                categories: '/api/v1/categories',
+                products: '/api/v1/products',
+                brands: '/api/v1/brands',
+                cart: '/api/v1/cart',
             },
             admin: {
                 auth: '/api/v1/admin/auth',
@@ -30,6 +35,7 @@ router.get('/v1', (req, res) => {
                 products: '/api/v1/admin/products',
                 orders: '/api/v1/admin/orders',
                 brands: 'api/v1/admin/brands',
+                upload: 'api/v1/admin/upload',
             },
         },
     });

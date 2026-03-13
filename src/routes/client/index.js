@@ -8,6 +8,7 @@ const bannerRoutes = require('./banner.routes');
 const categoryRoutes = require('./category.routes');
 const productRoutes = require('./product.routes');
 const brandRoutes = require('./brand.routes');
+const uploadRoutes = require('./upload.routes');
 
 // Public — no JWT needed
 router.use('/auth', authRoutes);
@@ -18,6 +19,7 @@ router.use('/banners', bannerRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/products', productRoutes);
 router.use('/brands', brandRoutes);
+router.use('/upload', uploadRoutes);
 
 // router.use('/orders',  orderRoutes);
 

@@ -54,3 +54,7 @@ plans.todo
 !*/.gitkeep
 !public/*/*/.gitkeep
 
+
+
+# Uploads
+/uploads

@@ -4,6 +4,8 @@ const fs = require('fs');
 const { ApiError } = require('../utils/ApiError');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
+const env = require('../config/env');
+const sharp = require('sharp');
 
 /**
  * Ensure upload directory exists
@@ -370,18 +372,29 @@ const processUploadedFile = async (req, res, next) => {
         for (const file of files) {
             if (!file) continue;
 
-            // Example: Image optimization with sharp
-            if (file.mimetype.startsWith('image/')) {
-                // const sharp = require('sharp');
-                // const optimizedPath = file.path.replace(/\.(jpg|jpeg|png)$/, '_optimized.$1');
-                // await sharp(file.path)
-                //   .resize(1920, 1080, { fit: 'inside', withoutEnlargement: true })
-                //   .jpeg({ quality: 85 })
-                //   .toFile(optimizedPath);
-
-                logger.logInfo('Image processed', {
+            // Image optimization and conversion to webp with sharp
+            if (file.mimetype && file.mimetype.startsWith('image/')) {
+                const optimizedPath = file.path.replace(
+                    /\.(jpg|jpeg|png|gif|webp)$/i,
+                    '_optimized.webp',
+                );
+                await sharp(file.path)
+                    .resize(1920, 1080, {
+                        fit: 'inside',
+                        withoutEnlargement: true,
+                    })
+                    .webp({ quality: 85 })
+                    .toFile(optimizedPath);
+                file.optimizedPath = optimizedPath;
+                if (typeof getFileUrl === 'function') {
+                    file.optimizedUrl = getFileUrl(
+                        path.basename(optimizedPath),
+                    );
+                }
+                logger.logInfo('Image processed and converted to webp', {
                     filename: file.filename,
                     originalSize: file.size,
+                    optimizedPath,
                 });
             }
         }
@@ -440,7 +453,8 @@ const cleanupOnError = (err, req, res, next) => {
  * Get file URL
  */
 const getFileUrl = (filename) => {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const baseUrl =
+        process.env.BASE_URL || `http://localhost:${env.PORT || 5000}`;
     return `${baseUrl}/uploads/${filename}`;
 };
 

@@ -6,7 +6,7 @@ const compression = require('compression');
 const routes = require('./routes/index');
 const errorHandler = require('./middlewares/Error.middleware');
 const { ApiError } = require('./utils/ApiError');
-
+const path = require('path');
 const app = express();
 
 // Security middleware
@@ -27,6 +27,9 @@ app.use(compression());
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// uploads:
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API routes
 app.use('/api', routes);
