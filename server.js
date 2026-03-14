@@ -2,11 +2,14 @@ const app = require('./src/app');
 const { sequelize } = require('./src/models');
 const logger = require('./src/utils/logger');
 const config = require('./src/config/env');
+const { getRedisClient, closeRedis } = require('./src/config/redis');
 
 const PORT = config.port || 5000;
 
 const startServer = async () => {
     try {
+        getRedisClient();
+
         // Test database connection
         await sequelize.authenticate();
         logger.info('Database connection established successfully');
@@ -30,6 +33,7 @@ const startServer = async () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
     logger.info('SIGTERM received, closing server...');
+    await closeRedis();
     await sequelize.close();
     process.exit(0);
 });

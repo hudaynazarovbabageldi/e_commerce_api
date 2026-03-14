@@ -1,26 +1,10 @@
 const rateLimit = require('express-rate-limit');
 const { RedisStore } = require('rate-limit-redis');
-const redis = require('redis');
-const { ApiError } = require('../utils/ApiError');
 const logger = require('../utils/logger');
-const config = require('../config/env');
+const { getRedisClient } = require('../config/redis');
 const { ipKeyGenerator } = rateLimit;
 
-let redisClient;
-if (config.redis && config.redis.host) {
-    redisClient = redis.createClient({
-        socket: {
-            host: config.redis.host,
-            port: config.redis.port || 6379,
-        },
-        password: config.redis.password,
-        legacyMode: true,
-    });
-
-    redisClient.connect().catch((err) => {
-        logger.error('Redis connection error:', err);
-    });
-}
+const redisClient = process.env.USE_REDIS === 'true' ? getRedisClient() : null;
 
 const createStore = () => {
     if (!redisClient) return undefined;
@@ -30,6 +14,19 @@ const createStore = () => {
         prefix: 'rl:',
     });
 };
+// const createStore = () => {
+//     if (!redisClient) {
+//         console.log('RateLimit using MemoryStore (Redis disabled)');
+//         return undefined;
+//     }
+
+//     console.log('RateLimit using RedisStore');
+
+//     return new RedisStore({
+//         sendCommand: (...args) => redisClient.sendCommand(args),
+//         prefix: 'rl:',
+//     });
+// };
 
 const keyGenerator = (req) => {
     if (req.user) {
@@ -67,10 +64,8 @@ const apiLimiter = rateLimit({
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
-    store: new RedisStore({
-        sendCommand: (...args) => redisClient.sendCommand(args),
-        prefix: 'rl:',
-    }),
+    store: createStore(),
+    passOnStoreError: true,
     handler: (req, res) => {
         res.status(429).json({ message: 'Too many requests' });
     },
@@ -82,6 +77,7 @@ const strictLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: createStore(),
+    passOnStoreError: true,
     keyGenerator,
     handler: rateLimitHandler,
     skipSuccessfulRequests: false,
@@ -97,6 +93,7 @@ const authLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: createStore(),
+    passOnStoreError: true,
     keyGenerator: (req) => `auth:${ipKeyGenerator(req)}`,
     handler: (req, res) => {
         logger.logSecurity('Auth rate limit exceeded', {
@@ -122,6 +119,7 @@ const passwordResetLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: createStore(),
+    passOnStoreError: true,
     keyGenerator: (req) => `reset:${ipKeyGenerator(req)}`,
     handler: rateLimitHandler,
 });
@@ -132,6 +130,7 @@ const emailVerificationLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: createStore(),
+    passOnStoreError: true,
     keyGenerator: (req) => `verify:${req.user?.id || ipKeyGenerator(req)}`,
     handler: rateLimitHandler,
 });
@@ -142,6 +141,7 @@ const uploadLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: createStore(),
+    passOnStoreError: true,
     keyGenerator,
     handler: (req, res) => {
         logger.logSecurity('Upload rate limit exceeded', {
@@ -164,6 +164,7 @@ const searchLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: createStore(),
+    passOnStoreError: true,
     keyGenerator,
     handler: rateLimitHandler,
     skipSuccessfulRequests: false,
@@ -175,6 +176,7 @@ const paymentLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: createStore(),
+    passOnStoreError: true,
     keyGenerator: (req) => `payment:${req.user?.id || ipKeyGenerator(req)}`,
     handler: (req, res) => {
         logger.logSecurity('Payment rate limit exceeded', {
@@ -198,6 +200,7 @@ const apiKeyLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: createStore(),
+    passOnStoreError: true,
     keyGenerator: (req) => `apikey:${req.headers['x-api-key']}`,
     handler: rateLimitHandler,
 });
@@ -219,6 +222,7 @@ const createRateLimiter = (options = {}) => {
         standardHeaders: true,
         legacyHeaders: false,
         store: createStore(),
+        passOnStoreError: true,
         keyGenerator: (req) => {
             const key = req.user
                 ? `user:${req.user.id}`
@@ -269,6 +273,7 @@ const dynamicRateLimiter = (limits = {}) => {
             standardHeaders: true,
             legacyHeaders: false,
             store: createStore(),
+            passOnStoreError: true,
             keyGenerator: (req) =>
                 `${role}:${req.user?.id || ipKeyGenerator(req)}`,
             handler: rateLimitHandler,
