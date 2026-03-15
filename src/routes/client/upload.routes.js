@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { asyncHandler } = require('../../utils/asyncHandler');
 const {
     uploadAvatar,
     handleUploadError,
@@ -36,6 +37,118 @@ const allowedMimeTypes = [
 const {
     createUploadMiddleware,
 } = require('../../middlewares/upload.middleware');
+const {
+    startMultipartUpload,
+    uploadPart,
+    completeMultipartUpload,
+    abortMultipartUpload,
+    uploadStreamDirect,
+    getPresignedUrl,
+} = require('../../services/multipart-upload.service');
+
+router.post(
+    '/multipart/init',
+    asyncHandler(async (req, res) => {
+        const payload = await startMultipartUpload({
+            filename: req.body?.filename,
+            contentType: req.body?.contentType,
+            size: req.body?.size,
+            userId: req.user?.id,
+            folder: 'client',
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Multipart upload initialized',
+            data: payload,
+        });
+    }),
+);
+
+router.put(
+    '/multipart/:uploadId/parts/:partNumber',
+    asyncHandler(async (req, res) => {
+        const payload = await uploadPart({
+            uploadId: req.params.uploadId,
+            partNumber: req.params.partNumber,
+            stream: req,
+            contentLength: req.headers['content-length'],
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Part uploaded',
+            data: payload,
+        });
+    }),
+);
+
+router.post(
+    '/multipart/:uploadId/complete',
+    asyncHandler(async (req, res) => {
+        const payload = await completeMultipartUpload({
+            uploadId: req.params.uploadId,
+            parts: req.body?.parts,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Multipart upload completed',
+            data: payload,
+        });
+    }),
+);
+
+router.delete(
+    '/multipart/:uploadId',
+    asyncHandler(async (req, res) => {
+        const payload = await abortMultipartUpload({
+            uploadId: req.params.uploadId,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Multipart upload aborted',
+            data: payload,
+        });
+    }),
+);
+
+router.put(
+    '/stream',
+    asyncHandler(async (req, res) => {
+        const payload = await uploadStreamDirect({
+            filename: req.query?.filename || req.headers['x-file-name'],
+            contentType: req.headers['content-type'],
+            stream: req,
+            contentLength: req.headers['content-length'],
+            userId: req.user?.id,
+            folder: 'client',
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Stream upload completed',
+            data: payload,
+        });
+    }),
+);
+
+router.get(
+    '/presigned',
+    asyncHandler(async (req, res) => {
+        const payload = await getPresignedUrl({
+            objectName: req.query.objectName,
+            expirySeconds: req.query.expiry ? Number(req.query.expiry) : 3600,
+        });
+
+        res.json({
+            success: true,
+            message: 'Presigned URL generated',
+            data: payload,
+        });
+    }),
+);
 
 router.post(
     '/',

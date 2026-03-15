@@ -107,3 +107,81 @@ services:
 business-logic;
 queries:
 db queries:
+
+## Big File Upload (Chunk/Streaming) with MinIO
+
+For large files, use multipart/chunk upload routes instead of `POST /api/v1/admin/upload` (multer limit applies there).
+
+### Required env vars
+
+```env
+MINIO_ENABLED=true
+MINIO_ENDPOINT=127.0.0.1
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=uploads
+MINIO_REGION=us-east-1
+MINIO_PUBLIC_URL=http://127.0.0.1:9000
+
+UPLOAD_MAX_PART_SIZE=67108864
+UPLOAD_MAX_FILE_SIZE=10737418240
+UPLOAD_SESSION_TTL_SECONDS=21600
+```
+
+### Routes
+
+Client base: `/api/v1/upload`  
+Admin base: `/api/v1/admin/upload`
+
+1. Initialize multipart upload
+
+`POST /multipart/init`
+
+```json
+{
+    "filename": "big-video.mp4",
+    "contentType": "video/mp4",
+    "size": 1048576000
+}
+```
+
+Response contains `uploadId`, `objectName`, `bucket`, `maxPartSize`.
+
+2. Upload each chunk
+
+`PUT /multipart/:uploadId/parts/:partNumber`
+
+- Body: raw binary chunk (`application/octet-stream`)
+- Header: `Content-Length` required
+
+3. Complete multipart upload
+
+`POST /multipart/:uploadId/complete`
+
+```json
+{
+    "parts": [
+        { "partNumber": 1, "etag": "<etag-1>" },
+        { "partNumber": 2, "etag": "<etag-2>" }
+    ]
+}
+```
+
+If `parts` is omitted, server will try to complete with already tracked parts.
+
+4. Abort upload
+
+`DELETE /multipart/:uploadId`
+
+### Direct stream upload (single request)
+
+`PUT /stream?filename=movie.mp4`
+
+- Body: raw file stream
+- Headers:
+    - `Content-Type`
+    - `Content-Length`
+
+This route streams directly to MinIO with no multer size cap.
