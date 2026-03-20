@@ -132,7 +132,7 @@ router.post(
 router.post(
     '/resend-verification',
     authenticate,
-    emailVerificationLimiter,
+    // emailVerificationLimiter,
     authAdminController.resendVerification,
 );
 

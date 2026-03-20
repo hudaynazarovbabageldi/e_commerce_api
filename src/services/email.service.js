@@ -1,29 +1,99 @@
 const logger = require('../utils/logger');
+const nodemailer = require('nodemailer');
 
 class EmailService {
     constructor() {
-        // TODO: Initialize email service (SendGrid, AWS SES, etc.)
+        this.isDevelopment = process.env.NODE_ENV === 'development';
+        this.useMailtrap =
+            this.isDevelopment &&
+            !!process.env.MAILTRAP_USER &&
+            !!process.env.MAILTRAP_PASS;
+
+        if (this.useMailtrap) {
+            const mailtrapPort = Number(process.env.MAILTRAP_PORT) || 2525;
+
+            this.transporter = nodemailer.createTransport({
+                host: process.env.MAILTRAP_HOST || 'sandbox.smtp.mailtrap.io',
+                port: mailtrapPort,
+                secure: process.env.MAILTRAP_SECURE === 'true',
+                auth: {
+                    user: process.env.MAILTRAP_USER,
+                    pass: process.env.MAILTRAP_PASS,
+                },
+                connectionTimeout: 10000,
+                greetingTimeout: 10000,
+                socketTimeout: 15000,
+            });
+        } else {
+            const smtpPort = Number(process.env.SMTP_PORT) || 587;
+            const smtpSecure =
+                process.env.SMTP_SECURE === 'true' || smtpPort === 465;
+
+            this.transporter = nodemailer.createTransport({
+                host: process.env.SMTP_HOST,
+                port: smtpPort,
+                secure: smtpSecure,
+                auth: {
+                    user: process.env.SMTP_USER,
+                    pass: process.env.SMTP_PASS,
+                },
+                connectionTimeout: 10000,
+                greetingTimeout: 10000,
+                socketTimeout: 15000,
+            });
+        }
     }
 
     async sendEmail(to, subject, html, text) {
         try {
+            if (this.useMailtrap) {
+                if (!process.env.MAILTRAP_USER || !process.env.MAILTRAP_PASS) {
+                    throw new Error(
+                        'Mailtrap configuration is missing (MAILTRAP_USER/MAILTRAP_PASS)',
+                    );
+                }
+            } else if (
+                !process.env.SMTP_HOST ||
+                !process.env.SMTP_USER ||
+                !process.env.SMTP_PASS
+            ) {
+                throw new Error(
+                    'SMTP configuration is missing (SMTP_HOST/SMTP_USER/SMTP_PASS)',
+                );
+            }
+
+            const fromEmail = this.useMailtrap
+                ? process.env.MAILTRAP_FROM_EMAIL || process.env.SMTP_USER
+                : process.env.SMTP_USER;
+            const fromName = process.env.MAIL_FROM_NAME || 'My App';
+
+            const info = await this.transporter.sendMail({
+                from: `"${fromName}" <${fromEmail}>`,
+                to,
+                subject,
+                text,
+                html,
+            });
+
             logger.logInfo('Email sent', {
                 to,
                 subject,
-                timestamp: new Date().toISOString(),
+                messageId: info.messageId,
+                provider: this.useMailtrap ? 'mailtrap' : 'smtp',
             });
-            console.log('==== EMAIL ====');
-            console.log(`To: ${to}`);
-            console.log(`Subject: ${subject}`);
-            console.log(`Content: ${text || html}`);
-            console.log('===============');
         } catch (error) {
             logger.logError('Failed to send email', {
                 to,
                 subject,
                 error: error.message,
             });
-            throw error;
+
+            const smtpError = new Error(
+                'Email service unavailable. Please try again later.',
+            );
+            smtpError.code = 'EMAIL_SERVICE_UNAVAILABLE';
+            smtpError.originalMessage = error.message;
+            throw smtpError;
         }
     }
 

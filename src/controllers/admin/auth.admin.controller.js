@@ -5,6 +5,7 @@ const { asyncHandler } = require('../../utils/asyncHandler');
 const jwtUtils = require('../../utils/jwt');
 const encryption = require('../../utils/encryption');
 const logger = require('../../utils/logger');
+const emailService = require('../../services/email.service');
 
 const register = asyncHandler(async (req, res) => {
     const { email, password, firstName, lastName, phone } = req.body;
@@ -14,7 +15,6 @@ const register = asyncHandler(async (req, res) => {
         throw new ApiError(409, 'Email already registered');
     }
 
-    console.log('existingUser: ', existingUser);
     // Validate password strength
     const passwordValidation = encryption.validatePasswordStrength(password);
     if (!passwordValidation.isValid) {
@@ -45,7 +45,7 @@ const register = asyncHandler(async (req, res) => {
     const verificationToken = jwtUtils.generateEmailVerificationToken(user.id);
 
     // TODO: Send verification email
-    // await emailService.sendVerificationEmail(user.email, verificationToken);
+    await emailService.sendVerificationEmail(user.email, verificationToken);
 
     logger.logBusinessEvent('user_registered', {
         userId: user.id,
@@ -195,10 +195,6 @@ const updateProfile = asyncHandler(async (req, res) => {
     );
 });
 
-/**
- * Change password
- * @route PUT /api/auth/change-password
- */
 const changePassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
@@ -237,10 +233,6 @@ const changePassword = asyncHandler(async (req, res) => {
     res.json(new ApiResponse(200, null, 'Password changed successfully'));
 });
 
-/**
- * Request password reset
- * @route POST /api/auth/forgot-password
- */
 const forgotPassword = asyncHandler(async (req, res) => {
     const { email } = req.body;
 
@@ -266,8 +258,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour
     await user.save();
 
-    // TODO: Send reset email
-    // await emailService.sendPasswordResetEmail(user.email, resetToken);
+    await emailService.sendPasswordResetEmail(user.email, resetToken);
 
     logger.logBusinessEvent('password_reset_requested', {
         userId: user.id,
@@ -283,18 +274,12 @@ const forgotPassword = asyncHandler(async (req, res) => {
     );
 });
 
-/**
- * Reset password with token
- * @route POST /api/auth/reset-password
- */
 const resetPassword = asyncHandler(async (req, res) => {
     const { token, newPassword } = req.body;
 
     try {
-        // Verify token
         const decoded = jwtUtils.verifySpecialToken(token, 'password_reset');
 
-        // Find user
         const hashedToken = encryption.hashSHA256(token);
         const user = await User.findOne({
             where: {
@@ -343,10 +328,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     }
 });
 
-/**
- * Verify email
- * @route POST /api/auth/verify-email
- */
 const verifyEmail = asyncHandler(async (req, res) => {
     const { token } = req.body;
 
@@ -394,6 +375,10 @@ const verifyEmail = asyncHandler(async (req, res) => {
 const resendVerification = asyncHandler(async (req, res) => {
     const user = await User.findByPk(req.user.id);
 
+    if (!user) {
+        throw new ApiError(404, 'User not found');
+    }
+
     if (user.emailVerified) {
         throw new ApiError(400, 'Email already verified');
     }
@@ -401,8 +386,40 @@ const resendVerification = asyncHandler(async (req, res) => {
     // Generate new verification token
     const verificationToken = jwtUtils.generateEmailVerificationToken(user.id);
 
-    // TODO: Send verification email
-    // await emailService.sendVerificationEmail(user.email, verificationToken);
+    try {
+        await emailService.sendVerificationEmail(
+            user.email,
+            verificationToken,
+            user.firstName,
+        );
+    } catch (error) {
+        if (error.code === 'EMAIL_SERVICE_UNAVAILABLE') {
+            if (process.env.NODE_ENV !== 'production') {
+                logger.logWarn(
+                    'SMTP unavailable, returning verification token in non-production mode',
+                    {
+                        userId: user.id,
+                        email: encryption.maskEmail(user.email),
+                        reason: error.originalMessage || error.message,
+                    },
+                );
+
+                return res.json(
+                    new ApiResponse(
+                        200,
+                        {
+                            verificationToken,
+                            emailSent: false,
+                        },
+                        'Verification token generated, but email delivery is unavailable in current environment',
+                    ),
+                );
+            }
+
+            throw new ApiError(503, error.message);
+        }
+        throw error;
+    }
 
     res.json(
         new ApiResponse(200, { verificationToken }, 'Verification email sent'),
