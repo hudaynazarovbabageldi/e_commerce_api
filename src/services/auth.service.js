@@ -22,7 +22,7 @@ class AuthService {
                 'Password does not meet requirements',
                 true,
                 null,
-                passwordValidation.errors
+                passwordValidation.errors,
             );
         }
 
@@ -36,19 +36,19 @@ class AuthService {
 
         const tokens = jwtUtils.generateTokenPair(user);
         const verificationToken = jwtUtils.generateEmailVerificationToken(
-            user.id
+            user.id,
         );
 
         emailService
             .sendVerificationEmail(
                 user.email,
                 verificationToken,
-                user.firstName
+                user.firstName,
             )
-            .catch(err =>
+            .catch((err) =>
                 logger.logError('Failed to send verification email', {
                     error: err.message,
-                })
+                }),
             );
 
         logger.logBusinessEvent('user_registered', {
@@ -73,7 +73,7 @@ class AuthService {
         if (!user.isActive) {
             throw new ApiError(
                 403,
-                'Your account has been deactivated. Please contact support.'
+                'Your account has been deactivated. Please contact support.',
             );
         }
 
@@ -133,7 +133,7 @@ class AuthService {
                 'New password does not meet requirements',
                 true,
                 null,
-                passwordValidation.errors
+                passwordValidation.errors,
             );
         }
 
@@ -147,10 +147,10 @@ class AuthService {
 
         emailService
             .sendPasswordChangedEmail(user.email, user.firstName)
-            .catch(err =>
+            .catch((err) =>
                 logger.logError('Failed to send password change email', {
                     error: err.message,
-                })
+                }),
             );
     }
 
@@ -165,10 +165,10 @@ class AuthService {
 
         emailService
             .sendPasswordResetEmail(user.email, resetToken, user.firstName)
-            .catch(err =>
+            .catch((err) =>
                 logger.logError('Failed to send password reset email', {
                     error: err.message,
-                })
+                }),
             );
 
         logger.logBusinessEvent('password_reset_requested', {
@@ -183,7 +183,7 @@ class AuthService {
         try {
             const decoded = jwtUtils.verifySpecialToken(
                 token,
-                'password_reset'
+                'password_reset',
             );
             const hashedToken = encryption.hashSHA256(token);
             const user = await User.findOne({
@@ -209,7 +209,7 @@ class AuthService {
                     'Password does not meet requirements',
                     true,
                     null,
-                    passwordValidation.errors
+                    passwordValidation.errors,
                 );
             }
 
@@ -224,10 +224,10 @@ class AuthService {
 
             emailService
                 .sendPasswordResetConfirmationEmail(user.email, user.firstName)
-                .catch(err =>
+                .catch((err) =>
                     logger.logError('Failed to send reset confirmation email', {
                         error: err.message,
-                    })
+                    }),
                 );
         } catch (error) {
             if (error instanceof ApiError) throw error;
@@ -239,7 +239,7 @@ class AuthService {
         try {
             const decoded = jwtUtils.verifySpecialToken(
                 token,
-                'email_verification'
+                'email_verification',
             );
             const user = await User.findByPk(decoded.userId);
             if (!user) {
@@ -262,10 +262,10 @@ class AuthService {
 
             emailService
                 .sendWelcomeEmail(user.email, user.firstName)
-                .catch(err =>
+                .catch((err) =>
                     logger.logError('Failed to send welcome email', {
                         error: err.message,
-                    })
+                    }),
                 );
         } catch (error) {
             if (error instanceof ApiError) throw error;
@@ -284,19 +284,19 @@ class AuthService {
         }
 
         const verificationToken = jwtUtils.generateEmailVerificationToken(
-            user.id
+            user.id,
         );
 
         emailService
             .sendVerificationEmail(
                 user.email,
                 verificationToken,
-                user.firstName
+                user.firstName,
             )
-            .catch(err =>
+            .catch((err) =>
                 logger.logError('Failed to send verification email', {
                     error: err.message,
-                })
+                }),
             );
 
         return verificationToken;

@@ -80,8 +80,8 @@ class EmailService {
         const subject = `Order Confirmation - ${order.orderNumber}`;
         const itemsList = order.items
             .map(
-                item =>
-                    `${item.productName} x ${item.quantity} - $${item.total}`
+                (item) =>
+                    `${item.productName} x ${item.quantity} - $${item.total}`,
             )
             .join('<br>');
         const html = `
@@ -131,7 +131,7 @@ class EmailService {
     async sendLowStockAlertEmail(email, products) {
         const subject = 'Low Stock Alert';
         const productsList = products
-            .map(p => `${p.name} (SKU: ${p.sku}) - ${p.stock} units`)
+            .map((p) => `${p.name} (SKU: ${p.sku}) - ${p.stock} units`)
             .join('<br>');
         const html = `<h1>Low Stock Alert</h1><p>Products needing restock:</p><p>${productsList}</p>`;
         const text = `Low Stock: ${products.length} products need restocking.`;

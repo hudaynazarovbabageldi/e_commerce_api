@@ -82,7 +82,7 @@ router.post(
 
 router.post(
     '/login',
-    authLimiter,
+    // authLimiter,
     validate(loginSchema),
     authAdminController.login,
 );
@@ -112,7 +112,7 @@ router.put(
 );
 router.post(
     '/forgot-password',
-    passwordResetLimiter,
+    // passwordResetLimiter,
     validate(forgotPasswordSchema),
     authAdminController.forgotPassword,
 );
