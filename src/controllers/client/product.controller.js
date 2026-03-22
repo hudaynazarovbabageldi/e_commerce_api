@@ -11,12 +11,21 @@ class ProductController {
             search: req.query.search,
         };
 
+        const options = {
+            locale: req.query.locale,
+            fallbackLocale: req.query.fallbackLocale,
+        };
+
         const pagination = {
             page: parseInt(req.query.page) || 1,
             limit: parseInt(req.query.limit) || 20,
         };
 
-        const result = await productService.getProducts(filters, pagination);
+        const result = await productService.getProducts(
+            filters,
+            pagination,
+            options,
+        );
 
         res.json(
             new ApiResponse(200, result, 'Products retrieved successfully'),
@@ -24,7 +33,10 @@ class ProductController {
     });
 
     getProduct = asyncHandler(async (req, res) => {
-        const product = await productService.getProductById(req.params.id);
+        const product = await productService.getProductById(req.params.id, {
+            locale: req.query.locale,
+            fallbackLocale: req.query.fallbackLocale,
+        });
 
         res.json(
             new ApiResponse(200, product, 'Product retrieved successfully'),

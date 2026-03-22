@@ -26,6 +26,7 @@ const Banner = require('./Banner')(sequelize);
 const Brand = require('./Brand')(sequelize);
 const Category = require('./Category')(sequelize);
 const Product = require('./Product')(sequelize);
+const ProductTranslation = require('./ProductTranslation')(sequelize);
 const Order = require('./Order')(sequelize);
 const OrderItem = require('./OrderItem')(sequelize);
 const Cart = require('./Cart')(sequelize);
@@ -54,6 +55,18 @@ Product.belongsTo(Category, {
 Category.hasMany(Product, {
     foreignKey: 'categoryId',
     as: 'products',
+});
+
+Product.hasMany(ProductTranslation, {
+    foreignKey: 'productId',
+    as: 'translations',
+    onDelete: 'CASCADE',
+    hooks: true,
+});
+
+ProductTranslation.belongsTo(Product, {
+    foreignKey: 'productId',
+    as: 'product',
 });
 
 // Brand associations
@@ -144,6 +157,7 @@ module.exports = {
     Brand,
     Category,
     Product,
+    ProductTranslation,
     Order,
     OrderItem,
     Cart,

@@ -21,10 +21,14 @@ const {
     attachFileUrls,
 } = require('../../middlewares/upload.middleware');
 
+const localeSchema = Joi.string()
+    .pattern(/^[a-z]{2}(?:-[a-z]{2})?$/i)
+    .optional();
+
 const createProductSchema = {
     body: Joi.object({
-        name: Joi.string().min(3).max(200).required(),
-        description: Joi.string().min(10).required(),
+        name: Joi.string().min(3).max(200),
+        description: Joi.string().min(10),
         shortDescription: Joi.string().max(500),
         sku: Joi.string().required(),
         price: Joi.number().min(0).required(),
@@ -51,7 +55,30 @@ const createProductSchema = {
         metaKeywords: commonSchemas.stringArray,
         brandId: commonSchemas.uuid,
         vendorId: commonSchemas.uuid.required(),
-    }),
+        locale: localeSchema,
+        translation: Joi.object({
+            locale: localeSchema,
+            name: Joi.string().min(3).max(200).required(),
+            slug: Joi.string().max(250).required(),
+            description: Joi.string().allow(''),
+            shortDescription: Joi.string().max(500).allow(''),
+            metaTitle: Joi.string().max(200).allow(''),
+            metaDescription: Joi.string().allow(''),
+        }).optional(),
+        translations: Joi.array()
+            .items(
+                Joi.object({
+                    locale: localeSchema.required(),
+                    name: Joi.string().min(3).max(200).required(),
+                    slug: Joi.string().max(250).required(),
+                    description: Joi.string().allow(''),
+                    shortDescription: Joi.string().max(500).allow(''),
+                    metaTitle: Joi.string().max(200).allow(''),
+                    metaDescription: Joi.string().allow(''),
+                }),
+            )
+            .optional(),
+    }).or('name', 'translation', 'translations'),
 };
 
 const updateProductSchema = {
@@ -85,6 +112,29 @@ const updateProductSchema = {
         metaTitle: Joi.string().max(200),
         metaDescription: Joi.string(),
         metaKeywords: commonSchemas.stringArray,
+        locale: localeSchema,
+        translation: Joi.object({
+            locale: localeSchema,
+            name: Joi.string().min(3).max(200),
+            slug: Joi.string().max(250),
+            description: Joi.string().allow(''),
+            shortDescription: Joi.string().max(500).allow(''),
+            metaTitle: Joi.string().max(200).allow(''),
+            metaDescription: Joi.string().allow(''),
+        }).optional(),
+        translations: Joi.array()
+            .items(
+                Joi.object({
+                    locale: localeSchema.required(),
+                    name: Joi.string().min(3).max(200).required(),
+                    slug: Joi.string().max(250).required(),
+                    description: Joi.string().allow(''),
+                    shortDescription: Joi.string().max(500).allow(''),
+                    metaTitle: Joi.string().max(200).allow(''),
+                    metaDescription: Joi.string().allow(''),
+                }),
+            )
+            .optional(),
     }).min(1),
 };
 
@@ -101,6 +151,8 @@ const getProductsSchema = {
         isFeatured: commonSchemas.boolean,
         isDigital: commonSchemas.boolean,
         inStock: commonSchemas.boolean,
+        locale: localeSchema,
+        fallbackLocale: localeSchema,
         sort: Joi.string().valid(
             'name',
             'price',
@@ -209,7 +261,7 @@ router.post(
     '/',
     authenticate,
     authorize('admin', 'vendor'),
-    validate(createProductSchema),
+    // validate(createProductSchema),
     productController.createProduct,
 );
 

@@ -1,13 +1,118 @@
-const { Product, Category, Inventory } = require('../models');
+const {
+    Product,
+    Category,
+    ProductTranslation,
+    Inventory,
+} = require('../models');
 const { ApiError } = require('../utils/ApiError');
 const logger = require('../utils/logger');
 const { Op } = require('sequelize');
 
 class ProductService {
+    defaultLocale = 'en';
+
+    normalizeLocale(locale) {
+        if (!locale || typeof locale !== 'string') {
+            return null;
+        }
+
+        const normalized = locale.toLowerCase().trim();
+        return normalized || null;
+    }
+
+    resolveLocales(locale, fallbackLocale) {
+        const requestedLocale = this.normalizeLocale(locale);
+        const fallback =
+            this.normalizeLocale(fallbackLocale) || this.defaultLocale;
+
+        if (!requestedLocale) {
+            return [fallback];
+        }
+
+        return requestedLocale === fallback
+            ? [requestedLocale]
+            : [requestedLocale, fallback];
+    }
+
+    pickTranslation(translations = [], locale, fallbackLocale) {
+        if (!translations.length) {
+            return null;
+        }
+
+        const locales = this.resolveLocales(locale, fallbackLocale);
+
+        for (const itemLocale of locales) {
+            const translation = translations.find(
+                (item) => item.locale === itemLocale,
+            );
+            if (translation) {
+                return translation;
+            }
+        }
+
+        return translations[0];
+    }
+
+    applyTranslation(product, locale, fallbackLocale) {
+        const data = product.toJSON ? product.toJSON() : { ...product };
+        const selected = this.pickTranslation(
+            data.translations || [],
+            locale,
+            fallbackLocale,
+        );
+
+        if (selected) {
+            data.name = selected.name || data.name;
+            data.slug = selected.slug || data.slug;
+            data.description = selected.description || data.description;
+            data.shortDescription =
+                selected.shortDescription || data.shortDescription;
+            data.metaTitle = selected.metaTitle || data.metaTitle;
+            data.metaDescription =
+                selected.metaDescription || data.metaDescription;
+            data.locale = selected.locale;
+        } else {
+            data.locale = this.resolveLocales(locale, fallbackLocale)[0];
+        }
+
+        delete data.translations;
+        return data;
+    }
+
+    buildTranslationPayload(payload = {}) {
+        return {
+            name: payload.name,
+            slug: payload.slug,
+            description: payload.description,
+            shortDescription: payload.shortDescription,
+            metaTitle: payload.metaTitle,
+            metaDescription: payload.metaDescription,
+        };
+    }
+
+    async ensureUniqueTranslationSlug(locale, slug, productId) {
+        if (!slug) return;
+
+        const existing = await ProductTranslation.findOne({
+            where: {
+                locale,
+                slug,
+                ...(productId ? { productId: { [Op.ne]: productId } } : {}),
+            },
+        });
+
+        if (existing) {
+            throw new ApiError(
+                400,
+                `Slug '${slug}' already exists for locale '${locale}'`,
+            );
+        }
+    }
+
     /**
      * Get all products with filters and pagination
      */
-    async getProducts(filters = {}, pagination = {}) {
+    async getProducts(filters = {}, pagination = {}, options = {}) {
         const {
             categoryId,
             minPrice,
@@ -19,6 +124,7 @@ class ProductService {
             inStock,
             sort,
         } = filters;
+        const { locale, fallbackLocale } = options;
         const { page = 1, limit = 20 } = pagination;
         const offset = (page - 1) * limit;
 
@@ -37,6 +143,12 @@ class ProductService {
 
         if (search) {
             where[Op.or] = [
+                { '$translations.name$': { [Op.iLike]: `%${search}%` } },
+                {
+                    '$translations.description$': {
+                        [Op.iLike]: `%${search}%`,
+                    },
+                },
                 { name: { [Op.iLike]: `%${search}%` } },
                 { description: { [Op.iLike]: `%${search}%` } },
                 { sku: { [Op.iLike]: `%${search}%` } },
@@ -72,14 +184,32 @@ class ProductService {
             where,
             include: [
                 { model: Category, as: 'category', attributes: ['id', 'name'] },
+                {
+                    model: ProductTranslation,
+                    as: 'translations',
+                    required: false,
+                    where: {
+                        locale: {
+                            [Op.in]: this.resolveLocales(
+                                locale,
+                                fallbackLocale,
+                            ),
+                        },
+                    },
+                },
             ],
             order,
             limit,
             offset,
+            distinct: true,
         });
 
+        const localizedRows = rows.map((product) =>
+            this.applyTranslation(product, locale, fallbackLocale),
+        );
+
         return {
-            data: rows,
+            data: localizedRows,
             pagination: {
                 page,
                 limit,
@@ -92,10 +222,24 @@ class ProductService {
     /**
      * Get product by ID with category details
      */
-    async getProductById(productId) {
+    async getProductById(productId, options = {}) {
+        const { locale, fallbackLocale } = options;
         const product = await Product.findByPk(productId, {
             include: [
                 { model: Category, as: 'category', attributes: ['id', 'name'] },
+                {
+                    model: ProductTranslation,
+                    as: 'translations',
+                    required: false,
+                    where: {
+                        locale: {
+                            [Op.in]: this.resolveLocales(
+                                locale,
+                                fallbackLocale,
+                            ),
+                        },
+                    },
+                },
             ],
         });
 
@@ -110,7 +254,7 @@ class ProductService {
         // Increment view count
         await product.incrementViewCount();
 
-        return product.toJSON();
+        return this.applyTranslation(product, locale, fallbackLocale);
     }
 
     /**
@@ -137,7 +281,9 @@ class ProductService {
      * Create a new product
      */
     async createProduct(data) {
+        console.log('data: ', data);
         try {
+            const { locale, translation, translations } = data;
             // Check if SKU already exists
             const existingSku = await Product.findOne({
                 where: { sku: data.sku },
@@ -154,14 +300,77 @@ class ProductService {
                 }
             }
 
-            const product = await Product.create(data);
+            const productPayload = { ...data };
+
+            console.log('new: ', productPayload);
+            delete productPayload.locale;
+            delete productPayload.translation;
+            delete productPayload.translations;
+
+            console.log('productPayload: ', productPayload);
+            const product = await Product.create(productPayload);
+
+            const baseLocale =
+                this.normalizeLocale(locale) || this.defaultLocale;
+            const translationData = translation || {
+                locale: baseLocale,
+                ...this.buildTranslationPayload(data),
+            };
+
+            if (translationData.name && translationData.slug) {
+                const normalizedLocale =
+                    this.normalizeLocale(translationData.locale) || baseLocale;
+
+                await this.ensureUniqueTranslationSlug(
+                    normalizedLocale,
+                    translationData.slug,
+                );
+
+                await ProductTranslation.create({
+                    productId: product.id,
+                    locale: normalizedLocale,
+                    ...this.buildTranslationPayload(translationData),
+                });
+            }
+
+            if (Array.isArray(translations)) {
+                for (const item of translations) {
+                    const itemLocale = this.normalizeLocale(item.locale);
+                    if (!itemLocale || !item.name || !item.slug) continue;
+
+                    await this.ensureUniqueTranslationSlug(
+                        itemLocale,
+                        item.slug,
+                    );
+
+                    await ProductTranslation.upsert({
+                        productId: product.id,
+                        locale: itemLocale,
+                        ...this.buildTranslationPayload(item),
+                    });
+                }
+            }
 
             logger.logBusinessEvent('product_created', {
                 productId: product.id,
                 productName: product.name,
             });
 
-            return product.toJSON();
+            const productWithTranslations = await Product.findByPk(product.id, {
+                include: [
+                    {
+                        model: ProductTranslation,
+                        as: 'translations',
+                        required: false,
+                    },
+                ],
+            });
+
+            return this.applyTranslation(
+                productWithTranslations,
+                baseLocale,
+                this.defaultLocale,
+            );
         } catch (error) {
             if (error instanceof ApiError) {
                 throw error;
@@ -178,6 +387,7 @@ class ProductService {
      */
     async updateProduct(productId, data) {
         try {
+            const { locale, translation, translations } = data;
             const product = await Product.findByPk(productId);
             if (!product) {
                 throw new ApiError(404, 'Product not found');
@@ -204,7 +414,63 @@ class ProductService {
                 }
             }
 
-            await product.update(data);
+            const productPayload = { ...data };
+            delete productPayload.locale;
+            delete productPayload.translation;
+            delete productPayload.translations;
+
+            await product.update(productPayload);
+
+            if (translation) {
+                const translationLocale =
+                    this.normalizeLocale(translation.locale || locale) ||
+                    this.defaultLocale;
+
+                if (!translation.name || !translation.slug) {
+                    throw new ApiError(
+                        400,
+                        'Translation requires both name and slug',
+                    );
+                }
+
+                await this.ensureUniqueTranslationSlug(
+                    translationLocale,
+                    translation.slug,
+                    productId,
+                );
+
+                await ProductTranslation.upsert({
+                    productId,
+                    locale: translationLocale,
+                    ...this.buildTranslationPayload(translation),
+                });
+            }
+
+            if (Array.isArray(translations)) {
+                for (const item of translations) {
+                    const itemLocale = this.normalizeLocale(item.locale);
+                    if (!itemLocale) continue;
+
+                    if (!item.name || !item.slug) {
+                        throw new ApiError(
+                            400,
+                            'Each translation must include locale, name and slug',
+                        );
+                    }
+
+                    await this.ensureUniqueTranslationSlug(
+                        itemLocale,
+                        item.slug,
+                        productId,
+                    );
+
+                    await ProductTranslation.upsert({
+                        productId,
+                        locale: itemLocale,
+                        ...this.buildTranslationPayload(item),
+                    });
+                }
+            }
 
             logger.logBusinessEvent('product_updated', {
                 productId: product.id,
@@ -212,7 +478,30 @@ class ProductService {
                 changedFields: Object.keys(data),
             });
 
-            return product.toJSON();
+            const requestedLocale = this.normalizeLocale(locale);
+            const productWithTranslations = await Product.findByPk(product.id, {
+                include: [
+                    {
+                        model: ProductTranslation,
+                        as: 'translations',
+                        required: false,
+                        where: {
+                            locale: {
+                                [Op.in]: this.resolveLocales(
+                                    requestedLocale,
+                                    this.defaultLocale,
+                                ),
+                            },
+                        },
+                    },
+                ],
+            });
+
+            return this.applyTranslation(
+                productWithTranslations,
+                requestedLocale,
+                this.defaultLocale,
+            );
         } catch (error) {
             if (error instanceof ApiError) {
                 throw error;
@@ -349,6 +638,70 @@ class ProductService {
         await product.incrementViewCount();
 
         return product.toJSON();
+    }
+
+    async getProductTranslations(productId) {
+        const product = await Product.findByPk(productId, {
+            attributes: ['id', 'name', 'slug'],
+        });
+
+        if (!product) {
+            throw new ApiError(404, 'Product not found');
+        }
+
+        const translations = await ProductTranslation.findAll({
+            where: { productId },
+            order: [['locale', 'ASC']],
+        });
+
+        return {
+            productId,
+            defaultName: product.name,
+            defaultSlug: product.slug,
+            translations,
+        };
+    }
+
+    async upsertProductTranslation(productId, locale, payload = {}) {
+        const product = await Product.findByPk(productId);
+        if (!product) {
+            throw new ApiError(404, 'Product not found');
+        }
+
+        const normalizedLocale = this.normalizeLocale(locale);
+        if (!normalizedLocale) {
+            throw new ApiError(400, 'Locale is required');
+        }
+
+        if (!payload.name || !payload.slug) {
+            throw new ApiError(400, 'Translation requires both name and slug');
+        }
+
+        await this.ensureUniqueTranslationSlug(
+            normalizedLocale,
+            payload.slug,
+            productId,
+        );
+
+        await ProductTranslation.upsert({
+            productId,
+            locale: normalizedLocale,
+            ...this.buildTranslationPayload(payload),
+        });
+
+        const savedTranslation = await ProductTranslation.findOne({
+            where: {
+                productId,
+                locale: normalizedLocale,
+            },
+        });
+
+        logger.logBusinessEvent('product_translation_upserted', {
+            productId,
+            locale: normalizedLocale,
+        });
+
+        return savedTranslation;
     }
 }
 

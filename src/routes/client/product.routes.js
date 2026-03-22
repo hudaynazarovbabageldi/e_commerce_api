@@ -21,6 +21,10 @@ const {
     attachFileUrls,
 } = require('../../middlewares/upload.middleware');
 
+const localeSchema = Joi.string()
+    .pattern(/^[a-z]{2}(?:-[a-z]{2})?$/i)
+    .optional();
+
 const getProductsSchema = {
     query: Joi.object({
         ...commonSchemas.pagination,
@@ -34,6 +38,8 @@ const getProductsSchema = {
         isFeatured: commonSchemas.boolean,
         isDigital: commonSchemas.boolean,
         inStock: commonSchemas.boolean,
+        locale: localeSchema,
+        fallbackLocale: localeSchema,
         sort: Joi.string().valid(
             'name',
             'price',

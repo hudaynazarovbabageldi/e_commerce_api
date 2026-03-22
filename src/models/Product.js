@@ -98,18 +98,18 @@ module.exports = (sequelize) => {
 
             name: {
                 type: DataTypes.STRING(200),
-                allowNull: false,
+                allowNull: true,
             },
 
             slug: {
                 type: DataTypes.STRING(250),
-                allowNull: false,
+                allowNull: true,
                 unique: true,
             },
 
             description: {
                 type: DataTypes.TEXT,
-                allowNull: false,
+                allowNull: true,
             },
 
             shortDescription: {
