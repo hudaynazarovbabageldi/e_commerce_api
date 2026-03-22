@@ -3,11 +3,11 @@ const { DataTypes, Model } = require('sequelize');
 module.exports = (sequelize) => {
     class Category extends Model {
         // Instance methods
-        toJSON() {
-            const values = { ...this.get() };
-            values.hasChildren = values.productCount > 0;
-            return values;
-        }
+        // toJSON() {
+        //     const values = { ...this.get() };
+        //     values.hasChildren = values.level > 0;
+        //     return values;
+        // }
 
         async getParent() {
             if (!this.parentId) return null;
@@ -164,6 +164,12 @@ module.exports = (sequelize) => {
                 { fields: ['is_active'] },
                 { fields: ['is_featured'] },
             ],
+
+            hasChildren: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+                field: 'has_children',
+            },
 
             hooks: {
                 beforeValidate: (category) => {

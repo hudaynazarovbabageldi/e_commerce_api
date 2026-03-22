@@ -1,4 +1,4 @@
-const { Category, Product } = require('../../models');
+const { Category, Product, sequelize } = require('../../models');
 const { ApiError } = require('../../utils/ApiError');
 const { ApiResponse } = require('../../utils/ApiResponse');
 const { asyncHandler } = require('../../utils/asyncHandler');
@@ -35,6 +35,18 @@ const getCategories = asyncHandler(async (req, res) => {
             ['sortOrder', 'ASC'],
             ['name', 'ASC'],
         ],
+        attributes: {
+            include: [
+                [
+                    sequelize.literal(`(
+                    SELECT COUNT(*)
+                    FROM categories AS child
+                    WHERE child.parent_id = "Category"."id"
+                ) > 0`),
+                    'hasChildren',
+                ],
+            ],
+        },
     });
 
     const response = pagination.createPaginatedResponse(
