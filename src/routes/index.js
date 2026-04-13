@@ -26,6 +26,7 @@ router.get('/v1', (req, res) => {
                 products: '/api/v1/products',
                 brands: '/api/v1/brands',
                 cart: '/api/v1/cart',
+                chat: '/api/v1/chat',
             },
             admin: {
                 auth: '/api/v1/admin/auth',
@@ -36,6 +37,7 @@ router.get('/v1', (req, res) => {
                 orders: '/api/v1/admin/orders',
                 brands: 'api/v1/admin/brands',
                 upload: 'api/v1/admin/upload',
+                chat: 'api/v1/admin/chat',
             },
         },
     });

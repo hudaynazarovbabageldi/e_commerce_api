@@ -13,6 +13,7 @@ const adminProductRoutes = require('./product.admin.routes');
 const adminOrderRoutes = require('./order.admin.routes');
 const adminBrandRoutes = require('./brand.admin.routes');
 const adminUploadRoutes = require('./upload.admin.routes');
+const adminChatRoutes = require('./chat.admin.routes');
 
 // Public — no JWT needed
 router.use('/auth', authAdminRoutes);
@@ -27,6 +28,7 @@ router.use('/categories', adminCategoryRoutes);
 router.use('/products', adminProductRoutes);
 router.use('/orders', adminOrderRoutes);
 router.use('/upload', adminUploadRoutes);
+router.use('/chat', adminChatRoutes);
 
 // router.use('/products',  adminProductRoutes);
 // router.use('/orders',    adminOrderRoutes);

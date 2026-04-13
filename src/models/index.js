@@ -31,6 +31,9 @@ const Order = require('./Order')(sequelize);
 const OrderItem = require('./OrderItem')(sequelize);
 const Cart = require('./Cart')(sequelize);
 const CartItem = require('./CartItem')(sequelize);
+const Conversation = require('./Conversation')(sequelize);
+const ConversationParticipant = require('./ConversationParticipant')(sequelize);
+const Message = require('./Message')(sequelize);
 
 // Define associations
 
@@ -148,6 +151,71 @@ Product.hasMany(CartItem, {
     as: 'cartItems',
 });
 
+// Chat associations
+Conversation.belongsTo(User, {
+    foreignKey: 'createdBy',
+    as: 'creator',
+});
+
+User.hasMany(Conversation, {
+    foreignKey: 'createdBy',
+    as: 'createdConversations',
+});
+
+Conversation.hasMany(ConversationParticipant, {
+    foreignKey: 'conversationId',
+    as: 'participants',
+    onDelete: 'CASCADE',
+    hooks: true,
+});
+
+ConversationParticipant.belongsTo(Conversation, {
+    foreignKey: 'conversationId',
+    as: 'conversation',
+});
+
+ConversationParticipant.belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user',
+});
+
+User.hasMany(ConversationParticipant, {
+    foreignKey: 'userId',
+    as: 'conversationMemberships',
+});
+
+Conversation.hasMany(Message, {
+    foreignKey: 'conversationId',
+    as: 'messages',
+    onDelete: 'CASCADE',
+    hooks: true,
+});
+
+Message.belongsTo(Conversation, {
+    foreignKey: 'conversationId',
+    as: 'conversation',
+});
+
+Message.belongsTo(User, {
+    foreignKey: 'senderId',
+    as: 'sender',
+});
+
+User.hasMany(Message, {
+    foreignKey: 'senderId',
+    as: 'messages',
+});
+
+Message.belongsTo(Message, {
+    foreignKey: 'replyToMessageId',
+    as: 'replyTo',
+});
+
+Message.hasMany(Message, {
+    foreignKey: 'replyToMessageId',
+    as: 'replies',
+});
+
 // Export models and sequelize instance
 module.exports = {
     sequelize,
@@ -162,4 +230,7 @@ module.exports = {
     OrderItem,
     Cart,
     CartItem,
+    Conversation,
+    ConversationParticipant,
+    Message,
 };
