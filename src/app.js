@@ -3,10 +3,12 @@ const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 const compression = require('compression');
+const swaggerUi = require('swagger-ui-express');
 const routes = require('./routes/index');
 const errorHandler = require('./middlewares/Error.middleware');
 const { ApiError } = require('./utils/ApiError');
 const config = require('./config/env');
+const swaggerSpec = require('./config/swagger');
 const path = require('path');
 const app = express();
 
@@ -63,6 +65,13 @@ app.use(compression());
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// Swagger docs
+app.get('/api-docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+});
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // uploads:
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

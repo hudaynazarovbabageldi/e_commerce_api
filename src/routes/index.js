@@ -2,6 +2,18 @@ const router = require('express').Router();
 const clientRoutes = require('./client');
 const adminRoutes = require('./admin');
 
+/**
+ * @openapi
+ * /v1/health:
+ *   get:
+ *     tags:
+ *       - System
+ *     summary: API health check
+ *     description: Returns service status and current timestamp.
+ *     responses:
+ *       200:
+ *         description: Service is healthy.
+ */
 router.get('/v1/health', (req, res) => {
     res.json({
         success: true,
@@ -11,6 +23,18 @@ router.get('/v1/health', (req, res) => {
     });
 });
 
+/**
+ * @openapi
+ * /v1:
+ *   get:
+ *     tags:
+ *       - System
+ *     summary: API metadata and endpoint groups
+ *     description: Returns API version and grouped endpoint prefixes.
+ *     responses:
+ *       200:
+ *         description: Metadata response.
+ */
 router.get('/v1', (req, res) => {
     res.json({
         success: true,
