@@ -68,7 +68,6 @@ const userIdSchema = {
 router.get(
     '/',
     authenticate,
-    authorize('admin'),
     apiLimiter,
     validate(getUsersSchema),
     userController.getUsers,
