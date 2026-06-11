@@ -45,6 +45,11 @@ const getConversation = asyncHandler(async (req, res) => {
 });
 
 const getConversationMessages = asyncHandler(async (req, res) => {
+    await chatService.markConversationAsRead(
+        req.user.id,
+        req.params.conversationId,
+    );
+
     const result = await chatService.getMessages(
         req.user.id,
         req.params.conversationId,

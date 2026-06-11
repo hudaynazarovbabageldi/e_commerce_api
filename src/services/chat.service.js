@@ -665,6 +665,20 @@ class ChatService {
             },
         );
 
+        await Message.update(
+            { isReaded: true },
+            {
+                where: {
+                    conversationId,
+                    senderId: { [Op.ne]: userId },
+                    isDeleted: false,
+                    createdAt: lastMessage
+                        ? { [Op.lte]: lastMessage.createdAt }
+                        : undefined,
+                },
+            },
+        );
+
         return {
             conversationId,
             messageId: lastMessage ? lastMessage.id : null,

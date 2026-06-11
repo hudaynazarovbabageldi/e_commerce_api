@@ -52,6 +52,12 @@ module.exports = (sequelize) => {
                 defaultValue: false,
                 field: 'is_edited',
             },
+            isReaded: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+                field: 'is_readed',
+            },
             editedAt: {
                 type: DataTypes.DATE,
                 allowNull: true,
