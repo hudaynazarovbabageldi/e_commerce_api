@@ -112,11 +112,58 @@ const removeParticipantSchema = {
 
 router.use(authenticate);
 
+/**
+ * @openapi
+ * /v1/chat/conversations:
+ *   post:
+ *     tags:
+ *       - Client Chat
+ *     summary: Create a new conversation
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateConversationRequest'
+ *     responses:
+ *       201:
+ *         description: Conversation created successfully.
+ */
+
 router.post(
     '/conversations',
     validate(createConversationSchema),
     chatController.createConversation,
 );
+
+/**
+ * @openapi
+ * /v1/chat/conversations:
+ *   get:
+ *     tags:
+ *       - Client Chat
+ *     summary: List user conversations
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: archived
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: Conversations retrieved successfully.
+ */
 
 router.get(
     '/conversations',
@@ -124,7 +171,42 @@ router.get(
     chatController.listConversations,
 );
 
+/**
+ * @openapi
+ * /v1/chat/conversations/unread-overview:
+ *   get:
+ *     tags:
+ *       - Client Chat
+ *     summary: Get unread counters overview
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Unread counters retrieved successfully.
+ */
+
 router.get('/conversations/unread-overview', chatController.getUnreadOverview);
+
+/**
+ * @openapi
+ * /v1/chat/conversations/{conversationId}:
+ *   get:
+ *     tags:
+ *       - Client Chat
+ *     summary: Get conversation by id
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Conversation retrieved successfully.
+ */
 
 router.get(
     '/conversations/:conversationId',
@@ -132,11 +214,72 @@ router.get(
     chatController.getConversation,
 );
 
+/**
+ * @openapi
+ * /v1/chat/conversations/{conversationId}/messages:
+ *   get:
+ *     tags:
+ *       - Client Chat
+ *     summary: List conversation messages
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: beforeMessageId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Messages retrieved successfully.
+ */
+
 router.get(
     '/conversations/:conversationId/messages',
     validate(listMessagesSchema),
     chatController.getConversationMessages,
 );
+
+/**
+ * @openapi
+ * /v1/chat/conversations/{conversationId}/messages:
+ *   post:
+ *     tags:
+ *       - Client Chat
+ *     summary: Send message to a conversation
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SendMessageRequest'
+ *     responses:
+ *       201:
+ *         description: Message sent successfully.
+ */
 
 router.post(
     '/conversations/:conversationId/messages',
@@ -144,11 +287,59 @@ router.post(
     chatController.sendMessage,
 );
 
+/**
+ * @openapi
+ * /v1/chat/messages/{messageId}:
+ *   patch:
+ *     tags:
+ *       - Client Chat
+ *     summary: Edit own message
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: messageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/EditMessageRequest'
+ *     responses:
+ *       200:
+ *         description: Message updated successfully.
+ */
+
 router.patch(
     '/messages/:messageId',
     validate(editMessageSchema),
     chatController.editMessage,
 );
+
+/**
+ * @openapi
+ * /v1/chat/messages/{messageId}:
+ *   delete:
+ *     tags:
+ *       - Client Chat
+ *     summary: Delete own message
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: messageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Message deleted successfully.
+ */
 
 router.delete(
     '/messages/:messageId',
@@ -156,11 +347,65 @@ router.delete(
     chatController.deleteMessage,
 );
 
+/**
+ * @openapi
+ * /v1/chat/conversations/{conversationId}/read:
+ *   post:
+ *     tags:
+ *       - Client Chat
+ *     summary: Mark conversation as read
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/MarkAsReadRequest'
+ *     responses:
+ *       200:
+ *         description: Conversation marked as read.
+ */
+
 router.post(
     '/conversations/:conversationId/read',
     validate(markAsReadSchema),
     chatController.markAsRead,
 );
+
+/**
+ * @openapi
+ * /v1/chat/conversations/{conversationId}/settings:
+ *   patch:
+ *     tags:
+ *       - Client Chat
+ *     summary: Update participant chat settings
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateConversationSettingsRequest'
+ *     responses:
+ *       200:
+ *         description: Conversation settings updated successfully.
+ */
 
 router.patch(
     '/conversations/:conversationId/settings',
@@ -168,11 +413,65 @@ router.patch(
     chatController.updateSettings,
 );
 
+/**
+ * @openapi
+ * /v1/chat/conversations/{conversationId}/participants:
+ *   post:
+ *     tags:
+ *       - Client Chat
+ *     summary: Add participants to a conversation
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AddParticipantsRequest'
+ *     responses:
+ *       200:
+ *         description: Participants added successfully.
+ */
+
 router.post(
     '/conversations/:conversationId/participants',
     validate(addParticipantsSchema),
     chatController.addParticipants,
 );
+
+/**
+ * @openapi
+ * /v1/chat/conversations/{conversationId}/participants/{userId}:
+ *   delete:
+ *     tags:
+ *       - Client Chat
+ *     summary: Remove participant from a conversation
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Participant removed successfully.
+ */
 
 router.delete(
     '/conversations/:conversationId/participants/:userId',
