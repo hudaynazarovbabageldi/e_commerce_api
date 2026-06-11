@@ -65,6 +65,42 @@ const userIdSchema = {
     }),
 };
 
+/**
+ * @openapi
+ * /v1/admin/users:
+ *   get:
+ *     tags:
+ *       - Admin Users
+ *     summary: List users (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [customer, vendor, admin]
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully.
+ */
+
 router.get(
     '/',
     authenticate,
@@ -74,12 +110,53 @@ router.get(
     userController.getUsers,
 );
 
+/**
+ * @openapi
+ * /v1/admin/users/{id}:
+ *   get:
+ *     tags:
+ *       - Admin Users
+ *     summary: Get user by id (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully.
+ */
+
 router.get(
     '/:id',
     authenticate,
     validate(userIdSchema),
     userController.getUserById,
 );
+
+/**
+ * @openapi
+ * /v1/admin/users:
+ *   post:
+ *     tags:
+ *       - Admin Users
+ *     summary: Create user (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserCreateRequest'
+ *     responses:
+ *       201:
+ *         description: User created successfully.
+ */
 
 router.post(
     '/',
@@ -89,12 +166,60 @@ router.post(
     userController.createUser,
 );
 
+/**
+ * @openapi
+ * /v1/admin/users/{id}:
+ *   put:
+ *     tags:
+ *       - Admin Users
+ *     summary: Update user (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserUpdateRequest'
+ *     responses:
+ *       200:
+ *         description: User updated successfully.
+ */
+
 router.put(
     '/:id',
     authenticate,
     validate(updateUserSchema),
     userController.updateUser,
 );
+
+/**
+ * @openapi
+ * /v1/admin/users/{id}:
+ *   delete:
+ *     tags:
+ *       - Admin Users
+ *     summary: Delete user (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: User deleted successfully.
+ */
 
 router.delete(
     '/:id',
@@ -104,6 +229,27 @@ router.delete(
     userController.deleteUser,
 );
 
+/**
+ * @openapi
+ * /v1/admin/users/{id}/deactivate:
+ *   post:
+ *     tags:
+ *       - Admin Users
+ *     summary: Deactivate user (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: User deactivated successfully.
+ */
+
 router.post(
     '/:id/deactivate',
     authenticate,
@@ -112,6 +258,27 @@ router.post(
     userController.deactivateUser,
 );
 
+/**
+ * @openapi
+ * /v1/admin/users/{id}/activate:
+ *   post:
+ *     tags:
+ *       - Admin Users
+ *     summary: Activate user (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: User activated successfully.
+ */
+
 router.post(
     '/:id/activate',
     authenticate,
@@ -119,6 +286,35 @@ router.post(
     validate(userIdSchema),
     userController.activateUser,
 );
+
+/**
+ * @openapi
+ * /v1/admin/users/{id}/orders:
+ *   get:
+ *     tags:
+ *       - Admin Users
+ *     summary: List user orders (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Orders retrieved successfully.
+ */
 
 router.get(
     '/:id/orders',
@@ -130,6 +326,33 @@ router.get(
     userController.getUserOrders,
 );
 
+/**
+ * @openapi
+ * /v1/admin/users/{id}/reviews:
+ *   get:
+ *     tags:
+ *       - Admin Users
+ *     summary: List user reviews (admin)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Reviews retrieved successfully.
+ */
+
 router.get(
     '/:id/reviews',
     validate({
@@ -139,12 +362,54 @@ router.get(
     userController.getUserReviews,
 );
 
+/**
+ * @openapi
+ * /v1/admin/users/{id}/addresses:
+ *   get:
+ *     tags:
+ *       - Admin Users
+ *     summary: List user addresses (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Addresses retrieved successfully.
+ */
+
 router.get(
     '/:id/addresses',
     authenticate,
     validate(userIdSchema),
     userController.getUserAddresses,
 );
+
+/**
+ * @openapi
+ * /v1/admin/users/{id}/stats:
+ *   get:
+ *     tags:
+ *       - Admin Users
+ *     summary: Get user statistics (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: User statistics retrieved successfully.
+ */
 
 router.get(
     '/:id/stats',
@@ -153,6 +418,33 @@ router.get(
     validate(userIdSchema),
     userController.getUserStats,
 );
+
+/**
+ * @openapi
+ * /v1/admin/users/{id}/role:
+ *   put:
+ *     tags:
+ *       - Admin Users
+ *     summary: Change user role (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserRoleUpdateRequest'
+ *     responses:
+ *       200:
+ *         description: User role updated successfully.
+ */
 
 router.put(
     '/:id/role',

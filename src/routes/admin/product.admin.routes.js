@@ -214,6 +214,46 @@ const slugSchema = {
 // @desc    Get all products
 // @access  Public
 
+/**
+ * @openapi
+ * /v1/admin/products:
+ *   get:
+ *     tags:
+ *       - Admin Products
+ *     summary: List products (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Products retrieved successfully.
+ */
+
 router.get(
     '/',
     searchLimiter,
@@ -252,11 +292,50 @@ router.get(
 // @route   GET /api/products/:id
 // @desc    Get product by ID
 // @access  Public
+/**
+ * @openapi
+ * /v1/admin/products/{id}:
+ *   get:
+ *     tags:
+ *       - Admin Products
+ *     summary: Get product by id (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Product retrieved successfully.
+ */
 router.get('/:id', validate(productIdSchema), productController.getProduct);
 
 // @route   POST /api/products
 // @desc    Create product
 // @access  Private (Admin, Vendor)
+/**
+ * @openapi
+ * /v1/admin/products:
+ *   post:
+ *     tags:
+ *       - Admin Products
+ *     summary: Create product (admin or vendor)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ProductWriteRequest'
+ *     responses:
+ *       201:
+ *         description: Product created successfully.
+ */
 router.post(
     '/',
     authenticate,
@@ -268,6 +347,32 @@ router.post(
 // @route   PUT /api/products/:id
 // @desc    Update product
 // @access  Private (Admin, Vendor - Own Products)
+/**
+ * @openapi
+ * /v1/admin/products/{id}:
+ *   put:
+ *     tags:
+ *       - Admin Products
+ *     summary: Update product (admin or vendor)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ProductWriteRequest'
+ *     responses:
+ *       200:
+ *         description: Product updated successfully.
+ */
 router.put(
     '/:id',
     authenticate,
@@ -279,6 +384,26 @@ router.put(
 // @route   DELETE /api/products/:id
 // @desc    Delete product
 // @access  Private (Admin)
+/**
+ * @openapi
+ * /v1/admin/products/{id}:
+ *   delete:
+ *     tags:
+ *       - Admin Products
+ *     summary: Delete product (admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Product deleted successfully.
+ */
 router.delete(
     '/:id',
     authenticate,

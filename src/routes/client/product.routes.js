@@ -63,12 +63,103 @@ const productIdSchema = {
     }),
 };
 
+/**
+ * @openapi
+ * /v1/products:
+ *   get:
+ *     tags:
+ *       - Client Products
+ *     summary: List products
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: locale
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: fallbackLocale
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Products retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ProductListData'
+ */
+
 router.get(
     '/',
     searchLimiter,
     validate(getProductsSchema),
     productController.getProducts,
 );
+
+/**
+ * @openapi
+ * /v1/products/{id}:
+ *   get:
+ *     tags:
+ *       - Client Products
+ *     summary: Get product by id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: locale
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: fallbackLocale
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Product'
+ */
 
 router.get('/:id', validate(productIdSchema), productController.getProduct);
 
